@@ -12,8 +12,6 @@ const ideasQueryOptions = () =>
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
-	loader: ({ context }) =>
-		context.queryClient.ensureQueryData(ideasQueryOptions()),
 });
 
 function HomePage() {

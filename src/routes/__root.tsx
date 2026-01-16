@@ -9,6 +9,11 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { fetchIdeas } from "@/api/ideas";
+import FullPageSkeleton from "@/components/FullPageSkeleton";
+
 type RouterContext = {
 	queryClient: QueryClient;
 };
@@ -30,7 +35,40 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 	notFoundComponent: NotFound,
 });
 
+<FullPageSkeleton />;
+
 function RootLayout() {
+	const queryClient = useQueryClient();
+	const isFetching = useIsFetching();
+
+	const queryKey = ["ideas", { limit: 3 }];
+	const cachedIdeas = queryClient.getQueryData(queryKey);
+	const ideasState = queryClient.getQueryState(queryKey);
+
+	const DATA_AGE_MS = 30_000; // 30s threshold
+	const dataUpdatedAt = ideasState?.dataUpdatedAt ?? 0;
+	const isDataStale = Date.now() - dataUpdatedAt > DATA_AGE_MS;
+
+	const isFetchingIdeas =
+		ideasState?.fetchStatus === "fetching" || isFetching > 0;
+
+	// Prefetch on mount only if there's no cached data and it's not already fetching.
+	useEffect(() => {
+		if (!cachedIdeas && ideasState?.fetchStatus !== "fetching") {
+			void queryClient.ensureQueryData({
+				queryKey,
+				queryFn: () => fetchIdeas(3),
+			});
+		}
+	}, [queryClient, cachedIdeas, ideasState?.fetchStatus]);
+
+	if (
+		(!cachedIdeas && isFetchingIdeas) ||
+		(cachedIdeas && isDataStale && isFetchingIdeas)
+	) {
+		return <FullPageSkeleton />;
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-100 flex flex-col">
 			<HeadContent />
