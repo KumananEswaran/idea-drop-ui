@@ -2,7 +2,6 @@ import api from "@/lib/axios";
 import type { Idea } from "@/types";
 
 export const fetchIdeas = async (limit?: number): Promise<Idea[]> => {
-	await new Promise((r) => setTimeout(r, 3000));
 	const res = await api.get("/ideas", {
 		params: limit ? { _limit: limit } : {},
 	});
